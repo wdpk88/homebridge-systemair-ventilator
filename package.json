@@ -1,0 +1,14 @@
+{
+  "name": "homebridge-systemair-ventilator",
+  "version": "1.0.0",
+  "description": "A Homebridge plugin for controlling a Systemair Ventilator",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Eric Barton",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.27.2"
+  }
+}
