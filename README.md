@@ -16,15 +16,15 @@ Run the following command to install the Homebridge Systemair Ventilator plugin:
 3. Configure the Plugin
 Edit the Homebridge config.json file to include the plugin. Add the following under "accessories":
    ```yaml
-{
-  "accessories": [
-    {
-      "accessory": "SystemairVentilator",
-      "name": "Living Room Ventilator",
-      "ip": "192.168.x.x"
-    }
-  ]
-}
+   {
+     "accessories": [
+       {
+         "accessory": "SystemairVentilator",
+         "name": "Living Room Ventilator",
+         "ip": "192.168.x.x"
+       }
+     ]
+   }
 Replace add your Systemair IP with the actual IP address of your Systemair SAVEConnect device.
 
 4. Restart Homebridge
