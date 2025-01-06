@@ -2,7 +2,6 @@
 This is a Homebridge plugin for controlling a Systemair Ventilator through its web interface. You must have a SAVEConnect WIFI module connected for this to work. You will need the IP address of the SAVEConnect device and include it in the plugin settings.
 
 # Installation
-1. Install Homebridge
 If Homebridge is not already installed, use the following command to install it globally:
 
 1. Install Homebridge:
@@ -14,14 +13,9 @@ If Homebridge is not already installed, use the following command to install it 
    npm install -g homebridge-systemair-ventilator
 Run the following command to install the Homebridge Systemair Ventilator plugin:
 
-bash
-Copy code
-npm install -g homebridge-systemair-ventilator
 3. Configure the Plugin
 Edit the Homebridge config.json file to include the plugin. Add the following under "accessories":
-
-json
-Copy code
+   ```bash
 {
   "accessory": "SystemairVentilator",
   "name": "Living Room Ventilator",
