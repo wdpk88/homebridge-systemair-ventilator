@@ -15,8 +15,7 @@ Run the following command to install the Homebridge Systemair Ventilator plugin:
 
 3. Configure the Plugin
 Edit the Homebridge config.json file to include the plugin. Add the following under "accessories":
-   ```bash
-{
+   ```bash{
   "accessory": "SystemairVentilator",
   "name": "Living Room Ventilator",
   "ip": "add your Systemair IP"
