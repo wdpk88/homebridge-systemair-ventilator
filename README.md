@@ -30,7 +30,7 @@ Replace add your Systemair IP with the actual IP address of your Systemair SAVEC
 4. Restart Homebridge
 Restart Homebridge for the changes to take effect:
 
-´´bash
+   ´´bash
 sudo systemctl restart homebridge
 
 # Features:
