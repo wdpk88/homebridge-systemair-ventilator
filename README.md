@@ -1,7 +1,7 @@
 # Homebridge Systemair Ventilator Plugin
 This is a Homebridge plugin for controlling a Systemair Ventilator through its web interface. You must have a SAVEConnect WIFI module connected for this to work. You will need the IP address of the SAVEConnect device and include it in the plugin settings.
 
-# Installation
+# Installation:
 If Homebridge is not already installed, use the following command to install it globally:
 
 1. Install Homebridge:
@@ -30,14 +30,15 @@ Replace add your Systemair IP with the actual IP address of your Systemair SAVEC
 4. Restart Homebridge
 Restart Homebridge for the changes to take effect:
 
-bash
-Copy code
+´´bash
 sudo systemctl restart homebridge
-Features
+
+# Features:
 Control fan speeds with three settings: Low, Medium, and High.
 Adjust target temperature directly from HomeKit.
 Automatically handles fan activation and speed synchronization.
-Troubleshooting
+
+# Troubleshooting:
 If the ventilator doesn't respond, check the following:
 
 Ensure the IP address in the configuration is correct.
