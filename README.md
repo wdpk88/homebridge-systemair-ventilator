@@ -5,10 +5,13 @@ This is a Homebridge plugin for controlling a Systemair Ventilator through its w
 1. Install Homebridge
 If Homebridge is not already installed, use the following command to install it globally:
 
-´´´bash
-Copy code
-npm install -g homebridge
+1. Install Homebridge:
+   ```bash
+   npm install -g homebridge
+   
 2. Install the Plugin
+   ```bash
+   npm install -g homebridge-systemair-ventilator
 Run the following command to install the Homebridge Systemair Ventilator plugin:
 
 bash
