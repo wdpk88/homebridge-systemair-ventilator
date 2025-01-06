@@ -9,7 +9,7 @@ If Homebridge is not already installed, use the following command to install it 
    npm install -g homebridge
    
 2. Install the Plugin
-   ```bash
+   ```json
    npm install -g homebridge-systemair-ventilator
 Run the following command to install the Homebridge Systemair Ventilator plugin:
 
