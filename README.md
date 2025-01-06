@@ -29,9 +29,8 @@ Replace add your Systemair IP with the actual IP address of your Systemair SAVEC
 
 4. Restart Homebridge
 Restart Homebridge for the changes to take effect:
-
-   ´´´bash
-   sudo systemctl restart homebridge
+   ```bash
+   sudo systemctl restart homebridge 
 
 # Features:
 Control fan speeds with three settings: Low, Medium, and High.
