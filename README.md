@@ -21,7 +21,7 @@ Edit the Homebridge config.json file to include the plugin. Add the following un
        {
          "accessory": "SystemairVentilator",
          "name": "Living Room Ventilator",
-         "ip": "192.168.x.x"
+         "ip": "x.x.x.x"
        }
      ]
    }
