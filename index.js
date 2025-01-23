@@ -23,6 +23,9 @@ class SystemairVentilator {
     // Fan service
     this.fanService = new this.api.hap.Service.Fanv2(this.config.name + " Fan");
 
+    // Add a Refresh service
+    this.refreshService = new this.api.hap.Service.Switch(this.config.name + " Refresh");
+
     this.setupCharacteristics();
   }
 
@@ -37,6 +40,11 @@ class SystemairVentilator {
       .getCharacteristic(this.api.hap.Characteristic.RotationSpeed)
       .on('set', this.setRotationSpeed.bind(this))
       .on('get', this.getRotationSpeed.bind(this));
+
+    // Refresh characteristic
+    this.refreshService
+      .getCharacteristic(this.api.hap.Characteristic.On)
+      .on('set', this.setRefresh.bind(this));
   }
 
   async retryRequest(url, retries = 3) {
@@ -51,6 +59,34 @@ class SystemairVentilator {
         this.log(`Retrying request (${i + 1}/${retries}) due to: ${error.message}`);
         await new Promise((resolve) => setTimeout(resolve, 500)); // 500ms delay before retry
       }
+    }
+  }
+
+  async setRefresh(value, callback) {
+    if (value) {
+      const readUrl = `http://${this.config.ip}/mread?{"1103":1}`;
+      const writeUrl = `http://${this.config.ip}/mwrite?{"1103":40}`;
+
+      this.log(`Refresh: Triggering refresh sequence.`);
+      try {
+        await this.retryRequest(readUrl);
+        this.log(`Refresh: Successfully read current state.`);
+        await this.retryRequest(writeUrl);
+        this.log(`Refresh: Successfully started refresh mode (40 min at full speed).`);
+        // Turn off the switch after initiating the refresh
+        setTimeout(() => {
+          this.refreshService
+            .getCharacteristic(this.api.hap.Characteristic.On)
+            .updateValue(false);
+        }, 1000);
+        callback(null);
+      } catch (error) {
+        this.log(`Refresh: Error - ${error.message}`);
+        callback(error);
+      }
+    } else {
+      this.log(`Refresh: Turned off manually.`);
+      callback(null);
     }
   }
 
@@ -82,47 +118,35 @@ class SystemairVentilator {
   }
 
   async setRotationSpeed(value, callback) {
-      let url;
+    let speed;
+    if (value === 0) {
+      speed = 0; // Off
+    } else if (value <= 16) {
+      speed = 2; // Low
+    } else if (value <= 50) {
+      speed = 3; // Normal
+    } else {
+      speed = 4; // High
+    }
 
-      if (value === 0) {
-          // Off
-          url = `http://${this.config.ip}/mwrite?{"1130":0,"1161":0,"2000":0,"2504":0,"16100":0}`;
-          this.log(`SetRotationSpeed: Turning off (value: ${value}%)`);
-      } else if (value <= 16) {
-          // Low speed
-          url = `http://${this.config.ip}/mwrite?{"1130":2,"1161":2,"2000":180,"2504":0,"16100":0}`;
-          this.log(`SetRotationSpeed: Setting to Low (value: ${value}%)`);
-      } else if (value <= 50) {
-          // Normal speed
-          url = `http://${this.config.ip}/mwrite?{"1130":3,"1161":2,"2000":180,"2504":0,"16100":0}`;
-          this.log(`SetRotationSpeed: Setting to Normal (value: ${value}%)`);
-      } else if (value <= 83) {
-          // High speed
-          url = `http://${this.config.ip}/mwrite?{"1130":4,"1161":2,"2000":180,"2504":0,"16100":0}`;
-          this.log(`SetRotationSpeed: Setting to High (value: ${value}%)`);
-      } else {
-          // Treat any value above 83% as High
-          url = `http://${this.config.ip}/mwrite?{"1130":4,"1161":2,"2000":180,"2504":0,"16100":0}`;
-          this.log(`SetRotationSpeed: Setting to High (value: ${value}%)`);
-      }
-
-      try {
-          await this.retryRequest(url);
-          this.log(`SetRotationSpeed: Successfully set to speed (value: ${value}%)`);
-          callback(null);
-      } catch (error) {
-          this.log(`SetRotationSpeed: Error - ${error.message}`);
-          callback(error);
-      }
+    const url = `http://${this.config.ip}/mwrite?{"1130":${speed}}`;
+    this.log(`SetRotationSpeed: Setting speed to ${speed} (value: ${value}%)`);
+    try {
+      await this.retryRequest(url);
+      this.log(`SetRotationSpeed: Successfully set to speed ${speed}`);
+      callback(null);
+    } catch (error) {
+      this.log(`SetRotationSpeed: Error - ${error.message}`);
+      callback(error);
+    }
   }
-
 
   async getRotationSpeed(callback) {
     const url = `http://${this.config.ip}/mread?{"1130":1}`;
     this.log(`GetRotationSpeed: Sending request to ${url}`);
     try {
       const response = await this.retryRequest(url);
-      const speed = response.data["1130"]; // Extract the speed value
+      const speed = response.data["1130"];
       let percentage;
 
       if (speed === 2) {
@@ -132,7 +156,7 @@ class SystemairVentilator {
       } else if (speed === 4) {
         percentage = 83; // High
       } else {
-        percentage = 0; // Off or unknown value
+        percentage = 0; // Off
       }
 
       this.log(`GetRotationSpeed: Current speed is ${speed} (value: ${percentage}%)`);
@@ -144,7 +168,8 @@ class SystemairVentilator {
   }
 
   getServices() {
-    return [this.fanService];
+    return [this.fanService, this.refreshService];
   }
 }
+
 	
