@@ -1,5 +1,5 @@
 # Homebridge Systemair Ventilator Plugin
-This is a Homebridge plugin for controlling a Systemair Ventilator through its web interface. You must have a SAVEConnect WIFI module connected for this to work. You will need the IP address of the SAVEConnect device and include it in the plugin settings.
+This is a Homebridge plugin for controlling a Systemair Ventilator through its web interface then into HomeKit. You must have a SAVEConnect WIFI module connected for this to work. You will need the IP address of the SAVEConnect device and include it in the plugin settings.
 
 # Installation:
 If Homebridge is not already installed, use the following command to install it globally:
@@ -34,14 +34,14 @@ Restart Homebridge for the changes to take effect:
 
 # Features:
 Control fan speeds with three settings: Low, Medium, and High.
-Adjust target temperature directly from HomeKit.
+Adjust the target temperature directly from HomeKit.
 Automatically handles fan activation and speed synchronization.
-Create Scenes for Low, Normal and High. Set the speeds to whats shown below
+Create scenes for Low, Normal, and High with the following mappings:
 
 speed === 1 maps to 0% (Off)
-speed === 2 maps to 16% (Low).
-speed === 3 maps to 50% (Normal).
-speed === 4 maps to 83% (High).
+speed === 2 maps to 16% (Low)
+speed === 3 maps to 50% (Normal)
+speed === 4 maps to 83% (High)
 
 # Troubleshooting:
 If the ventilator doesn't respond, check the following:
