@@ -36,6 +36,11 @@ Restart Homebridge for the changes to take effect:
 Control fan speeds with three settings: Low, Medium, and High.
 Adjust target temperature directly from HomeKit.
 Automatically handles fan activation and speed synchronization.
+Create Scenes for Low, Normal and High. Set the speeds to whats whown below
+speed === 2 maps to 16% (Low).
+speed === 3 maps to 50% (Normal).
+speed === 4 maps to 83% (High).
+Any other value defaults to 0% (Off or unknown).
 
 # Troubleshooting:
 If the ventilator doesn't respond, check the following:
