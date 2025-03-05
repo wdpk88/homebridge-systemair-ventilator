@@ -1,12 +1,10 @@
 const axios = require('axios');
-const { API } = require('homebridge');
 
-// Create an Axios instance with a timeout of 10 seconds
-const axiosInstance = axios.create({
-  timeout: 10000, // 10 seconds
-});
+let Service, Characteristic;
 
 module.exports = (homebridge) => {
+  Service = homebridge.hap.Service;
+  Characteristic = homebridge.hap.Characteristic;
   homebridge.registerAccessory(
     'homebridge-systemair-ventilator',
     'SystemairVentilator',
@@ -20,11 +18,18 @@ class SystemairVentilator {
     this.config = config;
     this.api = api;
 
-    // Fan service
-    this.fanService = new this.api.hap.Service.Fanv2(this.config.name + " Fan");
+    this.axiosInstance = axios.create({
+      timeout: 20000, // 20 seconds timeout
+    });
 
-    // Add a Refresh service
-    this.refreshService = new this.api.hap.Service.Switch(this.config.name + " Refresh");
+    // Fan service
+    this.fanService = new Service.Fanv2(this.config.name + " Fan");
+
+    // Refresh service
+    this.refreshService = new Service.Switch(this.config.name + " Refresh");
+
+    // Timer service (using BatteryService instead of LightSensor)
+    this.timerService = new Service.BatteryService(this.config.name + " Timer");
 
     this.setupCharacteristics();
   }
@@ -32,142 +37,122 @@ class SystemairVentilator {
   setupCharacteristics() {
     // Fan characteristics
     this.fanService
-      .getCharacteristic(this.api.hap.Characteristic.Active)
-      .on('set', this.setActive.bind(this))
-      .on('get', this.getActive.bind(this));
+      .getCharacteristic(Characteristic.Active)
+      .onSet(this.setActive.bind(this))
+      .onGet(this.getActive.bind(this));
 
     this.fanService
-      .getCharacteristic(this.api.hap.Characteristic.RotationSpeed)
-      .on('set', this.setRotationSpeed.bind(this))
-      .on('get', this.getRotationSpeed.bind(this));
+      .getCharacteristic(Characteristic.RotationSpeed)
+      .onSet(this.setRotationSpeed.bind(this))
+      .onGet(this.getRotationSpeed.bind(this));
 
     // Refresh characteristic
     this.refreshService
-      .getCharacteristic(this.api.hap.Characteristic.On)
-      .on('set', this.setRefresh.bind(this));
+      .getCharacteristic(Characteristic.On)
+      .onSet(this.setRefresh.bind(this));
+
+    // Timer characteristic (using Battery Level to store remaining time)
+    this.timerService
+      .getCharacteristic(Characteristic.BatteryLevel)
+      .onGet(this.getTimer.bind(this));
   }
 
   async retryRequest(url, retries = 3) {
     for (let i = 0; i < retries; i++) {
       try {
-        return await axiosInstance.get(url);
+        return await this.axiosInstance.get(url);
       } catch (error) {
         if (i === retries - 1) {
           this.log(`Retry failed: ${error.message}`);
           throw error;
         }
         this.log(`Retrying request (${i + 1}/${retries}) due to: ${error.message}`);
-        await new Promise((resolve) => setTimeout(resolve, 500)); // 500ms delay before retry
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1s delay before retry
       }
     }
   }
 
-  async setRefresh(value, callback) {
-    if (value) {
-      const writeUrl = `http://${this.config.ip}/mwrite?{"1130":2,"1161":4,"2000":180,"2504":0,"16100":0}`;
-      this.log(`Refresh: Sending request to ${writeUrl}`);
-      try {
-        const response = await this.retryRequest(writeUrl);
-        this.log(`Refresh: Successfully started refresh mode (custom settings).`);
-        // Automatically turn off the switch after initiating refresh
-        setTimeout(() => {
-          this.refreshService
-            .getCharacteristic(this.api.hap.Characteristic.On)
-            .updateValue(false);
-       }, 1000);
-        callback(null);
-      } catch (error) {
-        this.log(`Refresh: Error - ${error.message}`);
-        callback(error);
-      }
-    } else {
-      this.log(`Refresh: Turned off manually.`);
-      callback(null);
-    }
-  }
-
-
-
-  async setActive(value, callback) {
+  async setActive(value) {
     const url = `http://${this.config.ip}/mwrite?{"1130":${value ? '1' : '0'}}`;
     this.log(`SetActive: Sending request to ${url}`);
-    try {
-      await this.retryRequest(url);
-      this.log(`SetActive: Successfully set to ${value ? 'ON' : 'OFF'}`);
-      callback(null);
-    } catch (error) {
-      this.log(`SetActive: Error - ${error.message}`);
-      callback(error);
-    }
+    await this.retryRequest(url);
+    this.log(`SetActive: Successfully set to ${value ? 'ON' : 'OFF'}`);
   }
 
-  async getActive(callback) {
+  async getActive() {
     const url = `http://${this.config.ip}/mread?{"1130":1}`;
     this.log(`GetActive: Sending request to ${url}`);
-    try {
-      const response = await this.retryRequest(url);
-      const isActive = response.data["1130"] > 0; // Active if speed is 1, 2, or 3
-      this.log(`GetActive: Current state is ${isActive ? 'ON' : 'OFF'}`);
-      callback(null, isActive ? 1 : 0);
-    } catch (error) {
-      this.log(`GetActive: Error - ${error.message}`);
-      callback(error);
-    }
+    const response = await this.retryRequest(url);
+    const isActive = response.data["1130"] > 0;
+    this.log(`GetActive: Current state is ${isActive ? 'ON' : 'OFF'}`);
+    return isActive ? 1 : 0;
   }
 
-  async setRotationSpeed(value, callback) {
+  async setRotationSpeed(value) {
     let speed;
     if (value === 0) {
-      speed = 0; // Off
+      speed = 0;
     } else if (value <= 16) {
-      speed = 2; // Low
+      speed = 2;
     } else if (value <= 50) {
-      speed = 3; // Normal
+      speed = 3;
     } else {
-      speed = 4; // High
+      speed = 4;
     }
 
     const url = `http://${this.config.ip}/mwrite?{"1130":${speed}}`;
     this.log(`SetRotationSpeed: Setting speed to ${speed} (value: ${value}%)`);
-    try {
-      await this.retryRequest(url);
-      this.log(`SetRotationSpeed: Successfully set to speed ${speed}`);
-      callback(null);
-    } catch (error) {
-      this.log(`SetRotationSpeed: Error - ${error.message}`);
-      callback(error);
+    await this.retryRequest(url);
+    this.log(`SetRotationSpeed: Successfully set to speed ${speed}`);
+  }
+
+  async getRotationSpeed() {
+    const url = `http://${this.config.ip}/mread?{"1130":1}`;
+    this.log(`GetRotationSpeed: Sending request to ${url}`);
+    const response = await this.retryRequest(url);
+    const speed = response.data["1130"];
+    let percentage = speed === 2 ? 16 : speed === 3 ? 50 : speed === 4 ? 83 : 0;
+    this.log(`GetRotationSpeed: Current speed is ${speed} (value: ${percentage}%)`);
+    return percentage;
+  }
+
+  async setRefresh(value) {
+    if (value) {
+      const writeUrl = `http://${this.config.ip}/mwrite?{"1130":2,"1161":4,"2000":180,"2504":0,"16100":0}`;
+      this.log(`Refresh: Sending request to ${writeUrl}`);
+      await this.retryRequest(writeUrl);
+      this.log(`Refresh: Successfully started refresh mode.`);
+      setTimeout(() => {
+        this.refreshService
+          .getCharacteristic(Characteristic.On)
+          .updateValue(false);
+      }, 1000);
     }
   }
 
-  async getRotationSpeed(callback) {
-    const url = `http://${this.config.ip}/mread?{"1130":1}`;
-    this.log(`GetRotationSpeed: Sending request to ${url}`);
+  async getTimer() {
+    const url = `http://${this.config.ip}/mread?{"1110":2}`;
+    this.log(`Timer: Fetching timer value from ${url}`);
     try {
       const response = await this.retryRequest(url);
-      const speed = response.data["1130"];
-      let percentage;
+      let timerValue = response.data["1110"]; // Extract timer value
 
-      if (speed === 2) {
-        percentage = 16; // Low
-      } else if (speed === 3) {
-        percentage = 50; // Normal
-      } else if (speed === 4) {
-        percentage = 83; // High
-      } else {
-        percentage = 0; // Off
+      // Ensure timer value is valid for HomeKit (0 - 100% battery level range)
+      if (timerValue < 0) {
+        timerValue = 0;
+      } else if (timerValue > 100) {
+        timerValue = 100; // Max HomeKit battery level
       }
 
-      this.log(`GetRotationSpeed: Current speed is ${speed} (value: ${percentage}%)`);
-      callback(null, percentage);
+      this.log(`Timer: Current remaining time is ${timerValue} minutes.`);
+      return timerValue; // Return valid percentage
     } catch (error) {
-      this.log(`GetRotationSpeed: Error - ${error.message}`);
-      callback(error);
+      this.log(`Timer: Error - ${error.message}`);
+      return 0; // Default to 0% if an error occurs
     }
   }
 
   getServices() {
-    return [this.fanService, this.refreshService];
+    return [this.fanService, this.refreshService, this.timerService];
   }
 }
-
-	

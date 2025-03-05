@@ -1,6 +1,6 @@
 {
   "name": "homebridge-systemair-ventilator",
-  "version": "1.1.2",
+  "version": "1.1.4",
   "description": "A Homebridge plugin for controlling Systemair Ventilators.",
   "main": "index.js",
   "scripts": {
