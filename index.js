@@ -17,7 +17,6 @@ class SystemairVentilator {
     this.log = log;
     this.config = config;
     this.api = api;
-    this.timerDuration = 20; // Default timer duration (minutes)
 
     this.axiosInstance = axios.create({
       timeout: 20000, // 20 seconds timeout
@@ -26,14 +25,11 @@ class SystemairVentilator {
     // Fan service
     this.fanService = new Service.Fanv2(this.config.name + " Fan");
 
-    // Refresh service (to start the timer)
+    // Refresh service
     this.refreshService = new Service.Switch(this.config.name + " Refresh");
 
-    // Timer duration input (allows users to set how many minutes)
-    this.timerInputService = new Service.Lightbulb(this.config.name + " Timer Input");
-
-    // Timer display (shows remaining time as a HumiditySensor)
-    this.timerService = new Service.HumiditySensor(this.config.name + " Timer");
+    // Timer service (using BatteryService instead of LightSensor)
+    this.timerService = new Service.BatteryService(this.config.name + " Timer");
 
     this.setupCharacteristics();
   }
@@ -50,20 +46,14 @@ class SystemairVentilator {
       .onSet(this.setRotationSpeed.bind(this))
       .onGet(this.getRotationSpeed.bind(this));
 
-    // Refresh characteristic (activates the timer)
+    // Refresh characteristic
     this.refreshService
       .getCharacteristic(Characteristic.On)
       .onSet(this.setRefresh.bind(this));
 
-    // Timer input characteristic (to allow user to set duration)
-    this.timerInputService
-      .getCharacteristic(Characteristic.Brightness) // Use Brightness to allow a value input in HomeKit
-      .onSet(this.setTimerDuration.bind(this))
-      .onGet(this.getTimerDuration.bind(this));
-
-    // Timer characteristic (reads the remaining time)
+    // Timer characteristic (using Battery Level to store remaining time)
     this.timerService
-      .getCharacteristic(Characteristic.CurrentRelativeHumidity)
+      .getCharacteristic(Characteristic.BatteryLevel)
       .onGet(this.getTimer.bind(this));
   }
 
@@ -128,10 +118,10 @@ class SystemairVentilator {
 
   async setRefresh(value) {
     if (value) {
-      const writeUrl = `http://${this.config.ip}/mwrite?{"1103":${this.timerDuration}}`;
-      this.log(`Refresh: Sending request to ${writeUrl} for ${this.timerDuration} minutes`);
+      const writeUrl = `http://${this.config.ip}/mwrite?{"1130":2,"1161":4,"2000":180,"2504":0,"16100":0}`;
+      this.log(`Refresh: Sending request to ${writeUrl}`);
       await this.retryRequest(writeUrl);
-      this.log(`Refresh: Successfully started refresh mode for ${this.timerDuration} minutes.`);
+      this.log(`Refresh: Successfully started refresh mode.`);
       setTimeout(() => {
         this.refreshService
           .getCharacteristic(Characteristic.On)
@@ -141,34 +131,28 @@ class SystemairVentilator {
   }
 
   async getTimer() {
-    const url = `http://${this.config.ip}/mread?{"1103":1}`;
-    this.log(`Timer: Fetching remaining time from ${url}`);
+    const url = `http://${this.config.ip}/mread?{"1110":2}`;
+    this.log(`Timer: Fetching timer value from ${url}`);
     try {
       const response = await this.retryRequest(url);
-      let timerValue = response.data["1103"]; // Extract timer value
+      let timerValue = response.data["1110"]; // Extract timer value
 
-      if (timerValue < 0) timerValue = 0;
-      if (timerValue > 100) timerValue = 100;
+      // Ensure timer value is valid for HomeKit (0 - 100% battery level range)
+      if (timerValue < 0) {
+        timerValue = 0;
+      } else if (timerValue > 100) {
+        timerValue = 100; // Max HomeKit battery level
+      }
 
-      this.log(`Timer: Remaining time is ${timerValue} minutes.`);
-      return timerValue;
+      this.log(`Timer: Current remaining time is ${timerValue} minutes.`);
+      return timerValue; // Return valid percentage
     } catch (error) {
       this.log(`Timer: Error - ${error.message}`);
-      return 0;
+      return 0; // Default to 0% if an error occurs
     }
   }
 
-  async setTimerDuration(value) {
-    this.timerDuration = Math.max(1, Math.min(value, 100)); // Ensure 1-100 min range
-    this.log(`Timer Duration Set: ${this.timerDuration} minutes`);
-  }
-
-  async getTimerDuration() {
-    this.log(`Timer Duration Read: ${this.timerDuration} minutes`);
-    return this.timerDuration;
-  }
-
   getServices() {
-    return [this.fanService, this.refreshService, this.timerService, this.timerInputService];
+    return [this.fanService, this.refreshService, this.timerService];
   }
 }
