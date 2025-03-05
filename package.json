@@ -1,14 +1,35 @@
 {
   "name": "homebridge-systemair-ventilator",
-  "version": "1.0.0",
-  "description": "A Homebridge plugin for controlling a Systemair Ventilator",
+  "version": "1.1.2",
+  "description": "A Homebridge plugin for controlling Systemair Ventilators.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Eric Barton",
-  "license": "ISC",
+  "author": "Eric Barton eric.alexander.barton@gmail.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wdpk88/homebridge-systemair-ventilator.git"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "homebridge",
+    "systemair",
+    "ventilator",
+    "fan",
+    "thermostat"
+  ],
+  "engines": {
+    "node": ">=12.0.0",
+    "homebridge": ">=1.0.0"
+  },
   "dependencies": {
-    "axios": "^0.27.2"
+    "axios": "^1.4.0"
+  },
+   "homebridge": {
+   "pluginAlias": "SystemairVentilator",
+   "pluginType": "accessory",
+   "icon": "https://raw.githubusercontent.com/wdpk88/homebridge-systemair-ventilator/master/icon.png"
   }
 }
