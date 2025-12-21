@@ -32,6 +32,35 @@ Restart Homebridge for the changes to take effect:
    ```bash
    sudo systemctl restart homebridge 
 
+✨ What’s New / Recently Updated
+
+🔥 Temperature control via HomeKit (NEW)
+A Thermostat service is now exposed in HomeKit
+
+View and change the target temperature directly from the Apple Home app
+
+A temperature dial is shown in HomeKit
+
+Temperature range: 10°C – 30°C (0.5°C steps)
+
+❌ Fixed: Temperature resetting to 18°C
+Previously, using the Refresh function forced the temperature back to 18°C
+
+This behavior has been fixed
+
+Refresh now preserves the user-selected temperature
+
+🧠 Improved HomeKit stability
+Safe fallbacks ensure HomeKit always receives valid temperature values
+
+Prevents HomeKit from hiding the thermostat UI due to missing or invalid data
+
+🔄 Improved Refresh behavior
+Refresh mode no longer overrides temperature settings
+
+Fan speed and temperature are automatically restored after refresh completes
+
+
 # Features:
 Control fan speeds with three settings: Low, Medium, and High.
 Adjust the target temperature directly from HomeKit.
