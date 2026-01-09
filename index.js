@@ -28,8 +28,8 @@ class SystemairVentilator {
     // Refresh service
     this.refreshService = new Service.Switch(this.config.name + " Refresh");
 
-    // Timer service (using BatteryService instead of LightSensor)
-    this.timerService = new Service.BatteryService(this.config.name + " Timer");
+    // Timer service (using Battery instead of LightSensor)
+    this.timerService = new Service.Battery(this.config.name + " Timer");
 
     this.setupCharacteristics();
   }
